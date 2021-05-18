@@ -1,0 +1,153 @@
+﻿@namespace TwitterCodingChallenge.Pages.List
+@page "/profile"
+@page "/"
+
+<PageContainer Title="Tweets">
+    <Breadcrumb>
+        <Breadcrumb>
+            <BreadcrumbItem>Home</BreadcrumbItem>
+            <BreadcrumbItem>Tweets</BreadcrumbItem>
+        </Breadcrumb>
+    </Breadcrumb>
+    <Content>
+        <div class="pageHeaderContent__b__1">
+        </div>
+    </Content>
+    <ChildContent>
+        <Comment Avatar="@(@"https://pbs.twimg.com/profile_images/1383184766959120385/MM9DHPWC_400x400.jpg")">
+            <ContentTemplate>
+                @GetEditor(@onSubmit)
+            </ContentTemplate>
+        </Comment>
+        <div class="cardList">
+            <AntList TItem="TweetItem"
+                     DataSource="_data"
+                     ItemLayout="ListItemLayout.Horizontal"
+                     Grid="_listGridType"
+                     >
+                <ListItem Grid="_listGridType">
+                    <Card Hoverable Bordered Class="card">
+                        <ChildContent>
+                            <CardMeta>
+                                <AvatarTemplate>
+                                    <img alt="" class="cardAvatar" src="@context.ProfileImage" />
+                                </AvatarTemplate>
+                                <TitleTemplate>
+                                    <a>@context.Name</a>
+                                    <Text Disabled>@context.CreatedAt.ToString("HH:mm dd MMM")</Text>
+                                </TitleTemplate>
+                                <DescriptionTemplate>
+                                    <Paragraph class="item" Ellipsis>
+                                        @context.Content
+                                    </Paragraph>
+                                    @if (context.ParentTweetId != Guid.Empty)
+                                    {
+                                        var parentTw = this._data.First(x => x.Id == context.ParentTweetId);
+                                        <Card Bordered Class="card" >
+                                            <CardMeta>
+                                                <AvatarTemplate>
+                                                    <img alt="" class="cardAvatar" src="@parentTw.ProfileImage" />
+                                                </AvatarTemplate>
+                                                <TitleTemplate>
+                                                    <a>@parentTw.Name</a>
+                                                    <Text Disabled>@parentTw.CreatedAt.ToString("HH:mm dd MMM")</Text>
+                                                </TitleTemplate>
+                                                <DescriptionTemplate>
+                                                    @parentTw.Content
+                                                </DescriptionTemplate>
+                                            </CardMeta>
+                                        </Card>
+                                    }
+                                </DescriptionTemplate>
+                            </CardMeta>
+                        </ChildContent>
+                        <ActionTemplate>
+                            <CardAction><Icon Type="retweet" OnClick="@(()=> OnRetweetClick(context))" /> <span>@context.RetweetCount</span></CardAction>
+                            <CardAction><Icon Type="comment" OnClick="@(()=> OnCommentClick(context))" /></CardAction>
+                        </ActionTemplate>
+                    </Card>
+                </ListItem>
+            </AntList>
+        </div>
+    </ChildContent>
+</PageContainer>
+
+@code
+{
+    private static readonly RenderFragment Operate = @<a key="option1">Retweet</a>;
+
+    private readonly RenderFragment[] _actions =
+    {
+            Operate,
+            @<a key="option2">Comment</a>,
+    };
+
+    RenderFragment GetEditor(Action onSubmit)
+    {
+        return
+            @<div>
+                <TextArea MinRows="4" @bind-Value="@_value" Placeholder="What's happening?"/>
+                <br/>
+                <br/>
+                <Button Loading="@submitting" OnClick="onSubmit " type="primary">
+                    Tweet
+                </Button>
+            </div>;
+    }
+
+    private List<TweetItem> _data = new List<TweetItem>();
+
+    bool submitting = false;
+    string _value = "";
+
+    async void onSubmit()
+    {
+        submitting = true;
+
+        await Task.Delay(1000);
+        this._data.Add(new TweetItem()
+        {
+            Id = Guid.NewGuid(),
+            Name = "Elon Musk",
+            ProfileImage = "https://pbs.twimg.com/profile_images/1383184766959120385/MM9DHPWC_400x400.jpg",
+            Username = "elonmusk",
+            Content = _value,
+            CreatedAt = DateTime.Now,
+        });
+        submitting = false;
+        _value = "";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnRetweetClick(TweetItem tweet)
+    {
+        submitting = true;
+        var tweetToLinkId = tweet.ParentTweetId != Guid.Empty ? tweet.ParentTweetId : tweet.Id;
+        this._data.Add(new TweetItem()
+        {
+            Id = Guid.NewGuid(),
+            Name = "Elon Musk",
+            ProfileImage = "https://pbs.twimg.com/profile_images/1383184766959120385/MM9DHPWC_400x400.jpg",
+            Username = "elonmusk",
+            Content = _value,
+            CreatedAt = DateTime.Now,
+            ParentTweetId = tweetToLinkId
+        });
+        for (var i = 0; i < this._data.Count; i++)
+        {
+            var thisTw = this._data[i];
+            if (this._data[i].Id == tweetToLinkId)
+            {
+                thisTw.RetweetCount += 1;
+                this._data[i] = thisTw;
+            }
+        }
+        this._data = this._data.OrderByDescending(x => x.RetweetCount).ToList();
+        submitting = false;
+        await InvokeAsync(StateHasChanged);
+    }
+    async void OnCommentClick(TweetItem tweet)
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+}
