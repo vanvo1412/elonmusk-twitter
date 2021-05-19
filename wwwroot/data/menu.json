@@ -3,6 +3,6 @@
     "path": "/profile",
     "name": "Profile",
     "key": "tweets",
-    "icon": "dashboard"
+    "icon": "profile"
   }
 ]

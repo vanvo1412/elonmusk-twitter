@@ -16,7 +16,7 @@
     <ChildContent>
         <Comment Avatar="@(@"https://pbs.twimg.com/profile_images/1383184766959120385/MM9DHPWC_400x400.jpg")">
             <ContentTemplate>
-                @GetEditor(@onSubmit)
+                @GetEditor(OnSubmit)
             </ContentTemplate>
         </Comment>
         <div class="cardList">
@@ -89,65 +89,9 @@
                 <TextArea MinRows="4" @bind-Value="@_value" Placeholder="What's happening?"/>
                 <br/>
                 <br/>
-                <Button Loading="@submitting" OnClick="onSubmit " type="primary">
+                <Button Loading="@submitting" OnClick="OnSubmit " type="primary">
                     Tweet
                 </Button>
             </div>;
-    }
-
-    private List<TweetItem> _data = new List<TweetItem>();
-
-    bool submitting = false;
-    string _value = "";
-
-    async void onSubmit()
-    {
-        submitting = true;
-
-        await Task.Delay(1000);
-        this._data.Add(new TweetItem()
-        {
-            Id = Guid.NewGuid(),
-            Name = "Elon Musk",
-            ProfileImage = "https://pbs.twimg.com/profile_images/1383184766959120385/MM9DHPWC_400x400.jpg",
-            Username = "elonmusk",
-            Content = _value,
-            CreatedAt = DateTime.Now,
-        });
-        submitting = false;
-        _value = "";
-        await InvokeAsync(StateHasChanged);
-    }
-
-    async void OnRetweetClick(TweetItem tweet)
-    {
-        submitting = true;
-        var tweetToLinkId = tweet.ParentTweetId != Guid.Empty ? tweet.ParentTweetId : tweet.Id;
-        this._data.Add(new TweetItem()
-        {
-            Id = Guid.NewGuid(),
-            Name = "Elon Musk",
-            ProfileImage = "https://pbs.twimg.com/profile_images/1383184766959120385/MM9DHPWC_400x400.jpg",
-            Username = "elonmusk",
-            Content = _value,
-            CreatedAt = DateTime.Now,
-            ParentTweetId = tweetToLinkId
-        });
-        for (var i = 0; i < this._data.Count; i++)
-        {
-            var thisTw = this._data[i];
-            if (this._data[i].Id == tweetToLinkId)
-            {
-                thisTw.RetweetCount += 1;
-                this._data[i] = thisTw;
-            }
-        }
-        this._data = this._data.OrderByDescending(x => x.RetweetCount).ToList();
-        submitting = false;
-        await InvokeAsync(StateHasChanged);
-    }
-    async void OnCommentClick(TweetItem tweet)
-    {
-        await InvokeAsync(StateHasChanged);
     }
 }
